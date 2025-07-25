@@ -1,0 +1,357 @@
+<!-- Arquivo: SearchDialog.html (Versão 6.0 - Componente Refatorado) -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Localizar Conteúdo - SIG-TE</title>
+  <style>
+    /* 1. ESTILO GERAL E VARIÁVEIS (Consistente com a UI Principal) */
+    :root {
+      --md-primary-color: #1976d2;
+      --md-primary-dark: #004ba0;
+      --md-text-primary: #212121;
+      --md-text-secondary: #757575;
+      --md-divider-color: #e0e0e0;
+      --md-success-color: #2e7d32;
+      --md-error-color: #d32f2f;
+      --md-warning-color: #f57c00;
+      --md-success-bg: #e8f5e9;
+      --md-error-bg: #ffebee;
+      --md-warning-bg: #fff3e0;
+      --md-info-bg: #e3f2fd;
+      --md-border-radius: 4px;
+      --md-shadow-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 24px;
+      background-color: #f5f5f5;
+      color: var(--md-text-primary);
+      line-height: 1.5;
+    }
+
+    /* 2. LAYOUT DO DIÁLOGO */
+    .search-header { text-align: center; margin-bottom: 20px; }
+    .search-header h1 { font-size: 1.4rem; margin: 0 0 4px 0; }
+    .search-header p { margin: 0; color: var(--md-text-secondary); }
+
+    .search-container {
+      background: white;
+      padding: 20px;
+      border-radius: var(--md-border-radius);
+      box-shadow: var(--md-shadow-1);
+      margin-bottom: 20px;
+    }
+    .search-input-group { display: flex; gap: 10px; align-items: center; }
+    #search-input {
+      flex-grow: 1;
+      padding: 10px 14px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: var(--md-border-radius);
+    }
+    #search-input:focus {
+      outline: none;
+      border-color: var(--md-primary-color);
+      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+    }
+    .search-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      padding-top: 15px;
+      border-top: 1px solid var(--md-divider-color);
+      margin-top: 15px;
+      font-size: 0.9rem;
+    }
+    .search-option { display: flex; align-items: center; gap: 6px; }
+    .search-option input { accent-color: var(--md-primary-color); }
+
+    /* 3. BOTÕES E INDICADORES */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      border: none;
+      border-radius: var(--md-border-radius);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .btn-primary { background-color: var(--md-primary-color); color: white; }
+    .btn-primary:hover:not(:disabled) { background-color: var(--md-primary-dark); }
+    .btn:disabled { background-color: #bdbdbd; cursor: not-allowed; }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    .status {
+      padding: 10px 14px;
+      border-radius: var(--md-border-radius);
+      margin-bottom: 20px;
+      animation: fadeIn 0.3s;
+    }
+    .status.success { background-color: var(--md-success-bg); color: var(--md-success-color); }
+    .status.error { background-color: var(--md-error-bg); color: var(--md-error-color); }
+    .status.info { background-color: var(--md-info-bg); color: var(--md-text-primary); }
+    .status.warning { background-color: var(--md-warning-bg); color: var(--md-warning-color); }
+
+    /* 4. CONTAINER DE RESULTADOS */
+    .results-container {
+      background: white;
+      border-radius: var(--md-border-radius);
+      box-shadow: var(--md-shadow-1);
+      overflow: hidden;
+      position: relative;
+      min-height: 200px;
+    }
+    .results-header {
+      background: #424242;
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .results-content { max-height: 350px; overflow-y: auto; }
+    .results-table { width: 100%; border-collapse: collapse; }
+    .results-table th {
+      background: #f5f5f5;
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 500;
+      border-bottom: 1px solid var(--md-divider-color);
+      position: sticky; top: 0;
+    }
+    .results-table td { padding: 12px 16px; border-bottom: 1px solid #f5f5f5; }
+    .result-row:hover { background-color: #e3f2fd; cursor: pointer; }
+    .result-valor { word-break: break-word; max-width: 300px; }
+    .highlight { background-color: #fff9c4; font-weight: 500; }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--md-text-secondary); }
+    .loading-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.8);
+      display: none; /* Controlado por JS */
+      justify-content: center; align-items: center;
+      flex-direction: column; gap: 10px;
+    }
+    .loading-spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #e0e0e0;
+      border-top-color: var(--md-primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div class="search-header">
+    <h1>🔍 Localizar Conteúdo</h1>
+    <p>Encontre informações em todas as abas da planilha</p>
+  </div>
+
+  <div class="search-container">
+    <div class="search-input-group">
+      <input type="search" id="search-input" placeholder="Digite o termo de busca..." aria-label="Termo de busca">
+      <button id="search-button" class="btn btn-primary">
+        <span id="button-text">Buscar</span>
+        <div id="button-spinner" class="spinner" style="display: none;"></div>
+      </button>
+    </div>
+    <div class="search-options">
+      <div class="search-option"><input type="checkbox" id="case-sensitive"><label for="case-sensitive">Diferenciar maiúsculas</label></div>
+      <div class="search-option"><input type="checkbox" id="whole-words"><label for="whole-words">Palavras inteiras</label></div>
+      <div class="search-option"><input type="checkbox" id="regex-search"><label for="regex-search">Busca avançada (Regex)</label></div>
+    </div>
+  </div>
+
+  <div id="status" class="status info" role="status" aria-live="polite">Digite pelo menos 2 caracteres para iniciar a busca.</div>
+
+  <div id="results-container" class="results-container">
+    <div class="results-header">
+      <h3>Resultados</h3>
+      <span id="results-count">0 resultados</span>
+    </div>
+    <div class="results-content" id="results-content">
+      <!-- Resultados ou estado de vazio serão renderizados aqui -->
+    </div>
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loading-spinner"></div>
+      <span>Buscando...</span>
+    </div>
+  </div>
+
+  <script>
+    // Módulo de Busca encapsulado para evitar conflitos globais
+    const SearchApp = {
+      // 1. CONFIGURAÇÃO E ESTADO
+      config: {
+        minSearchLength: 2,
+      },
+      state: {
+        isSearching: false,
+      },
+      // 2. MAPEAMENTO DA UI
+      ui: {
+        searchInput: document.getElementById('search-input'),
+        searchButton: document.getElementById('search-button'),
+        buttonText: document.getElementById('button-text'),
+        buttonSpinner: document.getElementById('button-spinner'),
+        statusDiv: document.getElementById('status'),
+        resultsContainer: document.getElementById('results-container'),
+        resultsContent: document.getElementById('results-content'),
+        resultsCount: document.getElementById('results-count'),
+        loadingOverlay: document.getElementById('loading-overlay'),
+        caseSensitive: document.getElementById('case-sensitive'),
+        wholeWords: document.getElementById('whole-words'),
+        regexSearch: document.getElementById('regex-search'),
+      },
+
+      // 3. INICIALIZAÇÃO
+      init() {
+        this.renderEmptyState('Pronto para buscar', 'Digite um termo no campo acima e clique em "Buscar".');
+        this.ui.searchInput.focus();
+        this.bindEvents();
+      },
+
+      bindEvents() {
+        this.ui.searchButton.addEventListener('click', () => this.triggerSearch());
+        this.ui.searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            this.triggerSearch();
+          }
+        });
+      },
+
+      // 4. LÓGICA DE BUSCA
+      triggerSearch() {
+        if (this.state.isSearching) return;
+        const term = this.ui.searchInput.value.trim();
+
+        if (term.length < this.config.minSearchLength) {
+          this.updateStatus('warning', `⚠️ Digite pelo menos ${this.config.minSearchLength} caracteres.`);
+          return;
+        }
+        
+        this.performSearch(term);
+      },
+
+      performSearch(term) {
+        this.setLoadingState(true);
+        const options = {
+          termo: term,
+          caseSensitive: this.ui.caseSensitive.checked,
+          wholeWords: this.ui.wholeWords.checked,
+          regexSearch: this.ui.regexSearch.checked,
+        };
+
+        google.script.run
+          .withSuccessHandler(response => this.onSearchSuccess(response, term))
+          .withFailureHandler(error => this.onSearchFailure(error))
+          .buscarEmTodaPlanilha(options);
+      },
+
+      // 5. MANIPULADORES DE RESPOSTA
+      onSearchSuccess(response, term) {
+        this.setLoadingState(false);
+        if (!response || !response.success) {
+          this.onSearchFailure(response || { message: "Resposta inválida do servidor." });
+          return;
+        }
+        
+        const results = response.data || [];
+        this.updateResultsCount(results.length);
+
+        if (results.length === 0) {
+          this.updateStatus('info', 'ℹ️ Nenhum resultado encontrado para sua busca.');
+          this.renderEmptyState('Nenhum resultado', 'Tente usar outros termos ou ajustar as opções de busca.');
+        } else {
+          const plural = results.length > 1 ? 's' : '';
+          this.updateStatus('success', `✅ ${results.length} resultado${plural} encontrado${plural}.`);
+          this.renderResults(results, term);
+        }
+      },
+
+      onSearchFailure(error) {
+        this.setLoadingState(false);
+        console.error("Search Error:", error);
+        this.updateStatus('error', `❌ Erro na busca: ${error.message}`);
+        this.renderEmptyState('Ocorreu um Erro', 'Não foi possível completar a busca. Tente novamente.');
+        this.updateResultsCount(0);
+      },
+
+      // 6. RENDERIZAÇÃO E UI
+      renderResults(results, term) {
+        const table = document.createElement('table');
+        table.className = 'results-table';
+        table.innerHTML = `<thead><tr><th>Aba</th><th>Célula</th><th>Conteúdo</th></tr></thead>`;
+        const tbody = document.createElement('tbody');
+        
+        const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+
+        results.forEach(res => {
+          const row = tbody.insertRow();
+          row.className = 'result-row';
+          row.title = `Ir para ${res.aba}!${res.celula}`;
+          row.addEventListener('click', () => this.navigateTo(res.aba, res.celula));
+
+          row.insertCell().textContent = res.aba;
+          row.insertCell().textContent = res.celula;
+          const valorCell = row.insertCell();
+          valorCell.className = 'result-valor';
+          valorCell.innerHTML = res.valor.toString().replace(regex, match => `<span class="highlight">${match}</span>`);
+        });
+        
+        table.appendChild(tbody);
+        this.ui.resultsContent.innerHTML = '';
+        this.ui.resultsContent.appendChild(table);
+      },
+
+      renderEmptyState(title, subtitle) {
+        this.ui.resultsContent.innerHTML = `<div class="empty-state"><h3>${title}</h3><p>${subtitle}</p></div>`;
+      },
+
+      setLoadingState(isLoading) {
+        this.state.isSearching = isLoading;
+        this.ui.searchButton.disabled = isLoading;
+        this.ui.searchInput.disabled = isLoading;
+        this.ui.buttonText.style.display = isLoading ? 'none' : 'inline';
+        this.ui.buttonSpinner.style.display = isLoading ? 'inline-block' : 'none';
+        this.ui.loadingOverlay.style.display = isLoading ? 'flex' : 'none';
+      },
+
+      updateStatus(type, message) {
+        this.ui.statusDiv.className = 'status ' + type;
+        this.ui.statusDiv.innerHTML = message;
+      },
+
+      updateResultsCount(count) {
+        this.ui.resultsCount.textContent = `${count} resultado${count !== 1 ? 's' : ''}`;
+      },
+
+      navigateTo(sheetName, cellA1) {
+        this.updateStatus('info', `Navegando para ${sheetName}!${cellA1}...`);
+        google.script.run
+          .withSuccessHandler(() => google.script.host.close())
+          .navegarParaCelula(sheetName, cellA1);
+      },
+    };
+
+    // Inicia a aplicação de busca quando o DOM estiver pronto.
+    document.addEventListener('DOMContentLoaded', () => SearchApp.init());
+  </script>
+</body>
+</html>

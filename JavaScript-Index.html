@@ -1,0 +1,392 @@
+<!-- Arquivo: JavaScript-Index.html (Versão 6.0 - Lógica de Interatividade Refatorada) -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  // =================================================================
+  //  1. ESTADO DA APLICAÇÃO E MAPEAMENTO DA UI
+  // =================================================================
+  const appState = {
+    data: {},
+    isSubmitting: false,
+    isInitializing: true,
+  };
+
+  const ui = {
+    spinner: document.getElementById('loading-spinner'),
+    statusMessage: document.getElementById('status-message'),
+    mainContent: document.querySelector('.card-content'),
+    tabBar: document.querySelector('.tab-bar'),
+    tabPanels: document.querySelectorAll('.tab-panel'),
+    refreshDataBtn: document.getElementById('refresh-data-btn'),
+    
+    // Formulários
+    formFrequencia: document.getElementById('form-frequencia'),
+    formPonto: document.getElementById('form-ponto'),
+    formReposicao: document.getElementById('form-reposicao'),
+    formAtividade: document.getElementById('form-atividade'),
+    formAddAluno: document.getElementById('form-add-aluno'),
+    formAddRota: document.getElementById('form-add-rota'),
+    
+    // Selects e Inputs principais
+    selectsEscola: document.querySelectorAll('select[id$="-escola"]'),
+    selectsRota: document.querySelectorAll('select[id$="-rota"]'),
+    selectFreqRota: document.getElementById('freq-rota'),
+    selectAlunoDeleteRota: document.getElementById('aluno-delete-rota'),
+    selectRotaMonitor: document.getElementById('rota-monitor'),
+    inputFreqMonitor: document.getElementById('freq-monitor'),
+    
+    // Containers de listas dinâmicas
+    containerListaAlunos: document.getElementById('lista-alunos'),
+    containerGerenciarAlunos: document.getElementById('lista-alunos-gerenciar'),
+    containerGerenciarRotas: document.getElementById('lista-rotas-gerenciar'),
+  };
+
+  // =================================================================
+  //  2. INICIALIZAÇÃO
+  // =================================================================
+
+  /**
+   * Ponto de entrada principal. Inicia a aplicação e lida com as atualizações.
+   * @param {boolean} isManualRefresh - Indica se a chamada foi por um clique do usuário.
+   */
+  function init(isManualRefresh = false) {
+    showLoading(true);
+    if (isManualRefresh) {
+      showStatus('info', 'Atualizando dados da planilha...');
+    }
+    
+    // Os event listeners são vinculados apenas uma vez.
+    if (appState.isInitializing) {
+      bindEventListeners();
+      appState.isInitializing = false;
+    }
+
+    google.script.run
+      .withSuccessHandler(response => onDataLoaded(response, isManualRefresh))
+      .withFailureHandler(onFailure)
+      .getDadosParaWebApp();
+  }
+
+  /**
+   * Vincula todos os event listeners aos elementos da UI.
+   */
+  function bindEventListeners() {
+    ui.tabBar.addEventListener('click', handleTabClick);
+    ui.refreshDataBtn.addEventListener('click', () => init(true));
+    
+    // Submissão de formulários
+    ui.formFrequencia.addEventListener('submit', handleFrequenciaSubmit);
+    ui.formPonto.addEventListener('submit', handleSimpleSubmit('pontoFacultativo', 'form-ponto'));
+    ui.formReposicao.addEventListener('submit', handleSimpleSubmit('reposicao', 'form-reposicao'));
+    ui.formAtividade.addEventListener('submit', handleSimpleSubmit('atividadeExtra', 'form-atividade'));
+    ui.formAddAluno.addEventListener('submit', handleAddAlunoSubmit);
+    ui.formAddRota.addEventListener('submit', handleAddRotaSubmit);
+    
+    // Interação com selects e listas
+    ui.selectsEscola.forEach(select => select.addEventListener('change', handleEscolaChange));
+    ui.selectFreqRota.addEventListener('change', handleRotaChange);
+    ui.selectAlunoDeleteRota.addEventListener('change', renderManagementLists);
+    ui.containerGerenciarAlunos.addEventListener('click', handleDeleteClick('excluirAluno', 'aluno-id'));
+    ui.containerGerenciarRotas.addEventListener('click', handleDeleteClick('excluirRota', 'rota-id'));
+  }
+
+  // =================================================================
+  //  3. MANIPULAÇÃO DE DADOS (RENDERIZAÇÃO)
+  // =================================================================
+
+  /**
+   * Chamado com sucesso após o backend retornar os dados.
+   * @param {object} response - A resposta do servidor.
+   * @param {boolean} isManualRefresh - Se a atualização foi iniciada pelo usuário.
+   */
+  function onDataLoaded(response, isManualRefresh) {
+    showLoading(false);
+    if (!response || !response.success) {
+      onFailure(response || { message: "Resposta inválida do servidor." });
+      return;
+    }
+    
+    appState.data = response.data;
+    populateAllDropdowns();
+    renderManagementLists();
+    
+    if (isManualRefresh) {
+      showStatus('success', 'Dados atualizados com sucesso!');
+    }
+  }
+
+  /**
+   * Popula todos os dropdowns (selects) da página com os dados mais recentes.
+   * Preserva as seleções do usuário durante a atualização.
+   */
+  function populateAllDropdowns() {
+    const escolas = Object.keys(appState.data).filter(k => k !== 'monitores').sort();
+    const monitores = appState.data.monitores || [];
+
+    // Salva os valores selecionados antes de limpar os selects para restaurá-los depois.
+    const selectedValues = {};
+    document.querySelectorAll('select').forEach(s => { selectedValues[s.id] = s.value; });
+
+    // Popula todos os selects de escola
+    ui.selectsEscola.forEach(select => {
+      select.innerHTML = '<option value="" disabled selected></option>';
+      escolas.forEach(escola => select.add(new Option(escola, escola)));
+      select.value = selectedValues[select.id] || "";
+    });
+
+    // Popula o select de monitores
+    ui.selectRotaMonitor.innerHTML = '<option value="" disabled selected></option>';
+    monitores.forEach(monitor => ui.selectRotaMonitor.add(new Option(`${monitor.nome} (${monitor.id})`, monitor.id)));
+    ui.selectRotaMonitor.value = selectedValues[ui.selectRotaMonitor.id] || "";
+
+    // Dispara o evento 'change' nos selects de escola para popular os selects de rota dependentes.
+    ui.selectsEscola.forEach(select => {
+      if (select.value) {
+        const event = new Event('change', { bubbles: true });
+        select.dispatchEvent(event);
+      }
+    });
+    
+    // Restaura a seleção das rotas após um pequeno delay para garantir que foram populadas.
+    setTimeout(() => {
+      ui.selectsRota.forEach(select => {
+        if (selectedValues[select.id]) {
+          select.value = selectedValues[select.id];
+        }
+      });
+    }, 0);
+  }
+
+  /**
+   * Atualiza um dropdown de rotas com base na escola selecionada.
+   */
+  function updateRotaDropdown(escolaSelect, rotaSelect) {
+    const nomeEscola = escolaSelect.value;
+    const rotas = appState.data[nomeEscola]?.rotas || [];
+    rotaSelect.innerHTML = '<option value="" disabled selected></option>';
+    rotas.forEach(rota => rotaSelect.add(new Option(`${rota.nome} (${rota.turno})`, rota.id)));
+  }
+
+  /**
+   * Renderiza as listas de gerenciamento (Alunos e Rotas).
+   */
+  function renderManagementLists() {
+    // Renderiza lista de rotas
+    const escolas = Object.keys(appState.data).filter(k => k !== 'monitores').sort();
+    let rotasHtml = '';
+    escolas.forEach(escola => {
+      (appState.data[escola].rotas || []).forEach(rota => {
+        const dias = rota.diasSemana ? ` | Dias: ${rota.diasSemana}` : '';
+        rotasHtml += `
+          <li class="management-item">
+            <div class="management-item-info">
+              <strong>${rota.nome} (${rota.turno})</strong>
+              <small>Escola: ${escola} | Monitor: ${rota.monitor.nome}${dias} | ID: ${rota.id}</small>
+            </div>
+            <button class="btn btn-danger" data-rota-id="${rota.id}">Excluir</button>
+          </li>`;
+      });
+    });
+    ui.containerGerenciarRotas.innerHTML = rotasHtml || '<li class="management-item">Nenhuma rota cadastrada.</li>';
+
+    // Renderiza lista de alunos com base nos filtros
+    const escolaSel = document.getElementById('aluno-delete-escola').value;
+    const rotaSel = ui.selectAlunoDeleteRota.value;
+    let alunosHtml = '<li class="management-item">Selecione uma escola e rota para ver os alunos.</li>';
+    if (escolaSel && rotaSel) {
+      const rota = appState.data[escolaSel]?.rotas.find(r => r.id === rotaSel);
+      if (rota && rota.alunos.length > 0) {
+        alunosHtml = rota.alunos.map(aluno => `
+          <li class="management-item">
+            <div class="management-item-info">
+              <strong>${aluno.nome}</strong>
+              <small>ID: ${aluno.id} | CPF: ${aluno.cpf || 'N/A'}</small>
+            </div>
+            <button class="btn btn-danger" data-aluno-id="${aluno.id}">Excluir</button>
+          </li>`).join('');
+      } else {
+        alunosHtml = '<li class="management-item">Nenhum aluno nesta rota.</li>';
+      }
+    }
+    ui.containerGerenciarAlunos.innerHTML = alunosHtml;
+  }
+
+  // =================================================================
+  //  4. MANIPULADORES DE EVENTOS (HANDLERS)
+  // =================================================================
+
+  function handleTabClick(e) {
+    if (!e.target.matches('.tab-button')) return;
+    ui.tabBar.querySelector('.active')?.classList.remove('active');
+    e.target.classList.add('active');
+    ui.tabPanels.forEach(panel => panel.classList.remove('active'));
+    document.getElementById(e.target.dataset.target).classList.add('active');
+  }
+
+  function handleEscolaChange(e) {
+    const form = e.target.closest('.tab-panel');
+    const rotaSelect = form.querySelector('select[id$="-rota"]');
+    if (rotaSelect) {
+      updateRotaDropdown(e.target, rotaSelect);
+    }
+  }
+
+  function handleRotaChange(e) {
+    const idRota = e.target.value;
+    const nomeEscola = document.getElementById('freq-escola').value;
+    const rota = appState.data[nomeEscola]?.rotas.find(r => r.id === idRota);
+    if (!rota) return;
+
+    ui.inputFreqMonitor.value = rota.monitor.nome;
+    ui.containerListaAlunos.innerHTML = (rota.alunos || []).map(aluno => `
+      <div class="aluno-item">
+        <input type="checkbox" id="aluno-${aluno.id}" value="${aluno.id}" checked>
+        <label for="aluno-${aluno.id}">${aluno.nome}</label>
+      </div>`).join('') || '<div class="aluno-item">Nenhum aluno nesta rota.</div>';
+  }
+
+  function handleFrequenciaSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const idRota = form.querySelector('#freq-rota').value;
+    const nomeEscola = form.querySelector('#freq-escola').value;
+    const rota = appState.data[nomeEscola]?.rotas.find(r => r.id === idRota);
+    if (!rota) return;
+
+    const presentes = [], ausentes = [];
+    form.querySelectorAll('#lista-alunos input[type="checkbox"]').forEach(cb => {
+      const aluno = rota.alunos.find(a => a.id === cb.value);
+      if (aluno) {
+        (cb.checked ? presentes : ausentes).push(aluno);
+      }
+    });
+
+    const data = { idRota, data: form.querySelector('#freq-data').value, monitor: rota.monitor, presentes, ausentes };
+    submitData({ type: 'frequencia', data }, form);
+  }
+
+  function handleAddAlunoSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = {
+      nomeCompleto: form.querySelector('#aluno-nome').value,
+      cpf: form.querySelector('#aluno-cpf').value,
+      idRota: form.querySelector('#aluno-rota').value,
+    };
+    submitData({ type: 'adicionarAluno', data }, form);
+  }
+
+  function handleAddRotaSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const diasSelecionados = Array.from(form.querySelectorAll('input[name="diasSemana"]:checked')).map(cb => cb.value);
+    if (diasSelecionados.length === 0) {
+      showStatus('error', 'Erro: Selecione pelo menos um dia da semana para a rota.');
+      return;
+    }
+    const data = {
+      nomeEscola: form.querySelector('#rota-escola').value,
+      itinerario: form.querySelector('#rota-itinerario').value,
+      turno: form.querySelector('#rota-turno').value,
+      idMonitor: form.querySelector('#rota-monitor').value,
+      diasSemana: diasSelecionados
+    };
+    submitData({ type: 'adicionarRota', data }, form);
+  }
+
+  function handleSimpleSubmit(type, formId) {
+    return function(e) {
+      e.preventDefault();
+      const form = document.getElementById(formId);
+      const data = {};
+      form.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.id) {
+          const key = el.id.substring(el.id.indexOf('-') + 1);
+          data[key] = el.value;
+        }
+      });
+      // Renomeia chaves para corresponder ao backend
+      if (data.escola) { data.nomeEscola = data.escola; delete data.escola; }
+      if (data.onibus) { data.qtdOnibus = data.onibus; delete data.onibus; }
+      if (data.link) { data.linkItinerario = data.link; delete data.link; }
+      if (data.alunos) { data.qtdAlunos = data.alunos; delete data.alunos; }
+      submitData({ type, data }, form);
+    }
+  }
+
+  function handleDeleteClick(type, idAttribute) {
+    return function(e) {
+      const button = e.target.closest(`button[data-${idAttribute}]`);
+      if (!button) return;
+      if (!confirm('Você tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.')) return;
+      
+      const id = button.dataset[idAttribute.replace(/-/g, '')];
+      const data = type === 'excluirAluno' ? { idAluno: id } : { idRota: id };
+      submitData({ type, data });
+    }
+  }
+
+  // =================================================================
+  //  5. COMUNICAÇÃO COM BACKEND
+  // =================================================================
+
+  /**
+   * Adiciona uma submissão a um lote e envia para o backend.
+   * @param {object} submission - O objeto de submissão.
+   * @param {HTMLFormElement} [form] - O formulário a ser resetado em caso de sucesso.
+   */
+  function submitData(submission, form) {
+    if (appState.isSubmitting) {
+      showStatus('info', 'Aguarde, processando a solicitação anterior...');
+      return;
+    }
+    appState.isSubmitting = true;
+    showLoading(true);
+    showStatus('info', 'Enviando dados...');
+
+    google.script.run
+      .withSuccessHandler(response => {
+        appState.isSubmitting = false;
+        showStatus(response.success ? 'success' : 'error', response.message);
+        if (response.success) {
+          form?.reset();
+          init(true); // Recarrega todos os dados para refletir a mudança.
+        } else {
+          showLoading(false);
+        }
+      })
+      .withFailureHandler(onFailure)
+      .processarLoteDeSubmissoes([submission]); // Envia como um lote de 1 item
+  }
+
+  /**
+   * Manipulador de falhas genérico para chamadas ao backend.
+   */
+  function onFailure(error) {
+    appState.isSubmitting = false;
+    showLoading(false);
+    const message = error?.message || "Ocorreu um erro desconhecido.";
+    showStatus('error', `Falha na comunicação: ${message}`);
+    console.error('Falha na chamada ao backend:', error);
+  }
+
+  // =================================================================
+  //  6. UTILITÁRIOS DA UI
+  // =================================================================
+
+  function showLoading(isLoading) {
+    ui.spinner.style.display = isLoading ? 'block' : 'none';
+    ui.mainContent.style.visibility = isLoading ? 'hidden' : 'visible';
+  }
+
+  function showStatus(type, message) {
+    ui.statusMessage.className = `status-message ${type}`;
+    ui.statusMessage.textContent = message;
+    ui.statusMessage.style.display = 'block';
+    setTimeout(() => { ui.statusMessage.style.display = 'none'; }, 5000);
+  }
+
+  // --- INICIA A APLICAÇÃO ---
+  init();
+});
+</script>

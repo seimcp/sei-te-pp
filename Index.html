@@ -1,0 +1,148 @@
+<!-- File: Index.html (Versão 6.0 - Estrutura Semântica) -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SIG-TE - Painel de Gestão (v22.0)</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap">
+    
+    <!-- [ALTERAÇÃO] Inclui o arquivo CSS centralizado -->
+    <?!= include('CSS');?>
+
+  </head>
+  <body>
+    <div class="main-container">
+
+      <!-- CABEÇALHO DA APLICAÇÃO -->
+      <div class="card">
+        <div class="card-header">
+          <div class="header-title">
+            <h1>SIG-TE</h1>
+            <p>Sistema Integrado de Gestão do Transporte Escolar</p>
+          </div>
+          <button id="refresh-data-btn" class="btn">🔄 Atualizar Dados</button>
+        </div>
+      </div>
+
+      <!-- CORPO PRINCIPAL COM ABAS -->
+      <div class="card">
+        <div class="tab-bar">
+          <button class="tab-button active" data-target="Frequencia">Frequência</button>
+          <button class="tab-button" data-target="PontoFacultativo">Ponto Facultativo</button>
+          <button class="tab-button" data-target="Reposicao">Reposição</button>
+          <button class="tab-button" data-target="AtividadeExtra">Atividade Extra</button>
+          <button class="tab-button" data-target="GerenciarAlunos">Gerenciar Alunos</button>
+          <button class="tab-button" data-target="GerenciarRotas">Gerenciar Rotas</button>
+        </div>
+
+        <div class="card-content">
+          <!-- PAINEL DE FREQUÊNCIA -->
+          <div id="Frequencia" class="tab-panel active">
+            <h2>Lançamento de Frequência</h2>
+            <form id="form-frequencia" class="form-grid">
+              <div class="form-group"><select id="freq-escola" class="form-select" required><option value="" disabled selected></option></select><label for="freq-escola" class="form-label">Escola</label></div>
+              <div class="form-group"><select id="freq-rota" class="form-select" required><option value="" disabled selected></option></select><label for="freq-rota" class="form-label">Rota / Itinerário</label></div>
+              <div class="form-group"><input type="date" id="freq-data" class="form-input" required><label for="freq-data" class="form-label">Data</label></div>
+              <div class="form-group"><input type="text" id="freq-monitor" class="form-input" placeholder=" " readonly><label for="freq-monitor" class="form-label">Monitor(a)</label></div>
+              <div class="form-group full-width"><div id="lista-alunos" class="aluno-list"></div></div>
+              <div class="form-group full-width"><button type="submit" class="btn btn-primary">Registrar Frequência</button></div>
+            </form>
+          </div>
+
+          <!-- PAINEL DE PONTO FACULTATIVO -->
+          <div id="PontoFacultativo" class="tab-panel">
+            <h2>Registrar Ponto Facultativo</h2>
+            <form id="form-ponto" class="form-grid">
+              <div class="form-group"><select id="ponto-escola" class="form-select" required><option value="" disabled selected></option></select><label for="ponto-escola" class="form-label">Escola</label></div>
+              <div class="form-group"><input type="date" id="ponto-data" class="form-input" required><label for="ponto-data" class="form-label">Data</label></div>
+              <div class="form-group full-width"><button type="submit" class="btn btn-primary">Registrar Ponto</button></div>
+            </form>
+          </div>
+
+          <!-- PAINEL DE REPOSIÇÃO -->
+          <div id="Reposicao" class="tab-panel">
+            <h2>Registrar Reposição de Aula</h2>
+            <form id="form-reposicao" class="form-grid">
+              <div class="form-group"><select id="repo-escola" class="form-select" required><option value="" disabled selected></option></select><label for="repo-escola" class="form-label">Escola</label></div>
+              <div class="form-group"><input type="date" id="repo-data" class="form-input" required><label for="repo-data" class="form-label">Data</label></div>
+              <div class="form-group"><input type="number" id="repo-onibus" class="form-input" placeholder=" " min="1" required><label for="repo-onibus" class="form-label">Qtd. Ônibus</label></div>
+              <div class="form-group full-width"><button type="submit" class="btn btn-primary">Registrar Reposição</button></div>
+            </form>
+          </div>
+
+          <!-- PAINEL DE ATIVIDADE EXTRA -->
+          <div id="AtividadeExtra" class="tab-panel">
+            <h2>Registrar Atividade Extracurricular</h2>
+            <form id="form-atividade" class="form-grid">
+              <div class="form-group"><select id="ativ-escola" class="form-select" required><option value="" disabled selected></option></select><label for="ativ-escola" class="form-label">Escola</label></div>
+              <div class="form-group"><input type="date" id="ativ-data" class="form-input" required><label for="ativ-data" class="form-label">Data</label></div>
+              <div class="form-group"><input type="text" id="ativ-destino" class="form-input" placeholder=" " required><label for="ativ-destino" class="form-label">Destino</label></div>
+              <div class="form-group"><input type="number" id="ativ-alunos" class="form-input" placeholder=" " min="1" required><label for="ativ-alunos" class="form-label">Qtd. Alunos</label></div>
+              <div class="form-group full-width"><textarea id="ativ-descricao" class="form-textarea" placeholder=" " rows="3" required></textarea><label for="ativ-descricao" class="form-label">Descrição</label></div>
+              <div class="form-group full-width"><input type="url" id="ativ-link" class="form-input" placeholder=" "><label for="ativ-link" class="form-label">Link do Itinerário (Opcional)</label></div>
+              <div class="form-group full-width"><button type="submit" class="btn btn-primary">Registrar Atividade</button></div>
+            </form>
+          </div>
+
+          <!-- PAINEL DE GERENCIAMENTO DE ALUNOS -->
+          <div id="GerenciarAlunos" class="tab-panel">
+            <h2>Gerenciar Alunos</h2>
+            <form id="form-add-aluno" class="form-grid">
+              <h3>Adicionar Novo Aluno</h3>
+              <div class="form-group full-width"><input type="text" id="aluno-nome" class="form-input" placeholder=" " required><label for="aluno-nome" class="form-label">Nome Completo do Aluno</label></div>
+              <div class="form-group"><input type="text" id="aluno-cpf" class="form-input" placeholder=" "><label for="aluno-cpf" class="form-label">CPF (Opcional)</label></div>
+              <div class="form-group"><select id="aluno-escola" class="form-select" required><option value="" disabled selected></option></select><label for="aluno-escola" class="form-label">Escola</label></div>
+              <div class="form-group"><select id="aluno-rota" class="form-select" required><option value="" disabled selected></option></select><label for="aluno-rota" class="form-label">Rota</label></div>
+              <div class="form-group full-width"><button type="submit" class="btn btn-primary">Adicionar Aluno</button></div>
+            </form>
+            <hr style="border: none; border-top: 1px solid var(--md-divider-color); margin: 32px 0;">
+            <h3>Excluir Aluno Existente</h3>
+            <div class="form-grid">
+              <div class="form-group"><select id="aluno-delete-escola" class="form-select"><option value="" disabled selected></option></select><label for="aluno-delete-escola" class="form-label">Filtrar por Escola</label></div>
+              <div class="form-group"><select id="aluno-delete-rota" class="form-select"><option value="" disabled selected></option></select><label for="aluno-delete-rota" class="form-label">Filtrar por Rota</label></div>
+            </div>
+            <div id="lista-alunos-gerenciar" class="management-list" style="margin-top: 16px;"></div>
+          </div>
+
+          <!-- PAINEL DE GERENCIAMENTO DE ROTAS -->
+          <div id="GerenciarRotas" class="tab-panel">
+            <h2>Gerenciar Rotas</h2>
+            <form id="form-add-rota" class="form-grid">
+              <h3>Adicionar Nova Rota</h3>
+              <div class="form-group"><input type="text" id="rota-escola" class="form-input" placeholder=" " required><label for="rota-escola" class="form-label">Nome da Escola</label></div>
+              <div class="form-group"><input type="text" id="rota-itinerario" class="form-input" placeholder=" " required><label for="rota-itinerario" class="form-label">Nome do Itinerário</label></div>
+              <div class="form-group"><select id="rota-turno" class="form-select" required><option value="" disabled selected></option><option value="Matutino">Matutino</option><option value="Vespertino">Vespertino</option><option value="Integral">Integral</option><option value="Noturno">Noturno</option></select><label for="rota-turno" class="form-label">Turno</label></div>
+              <div class="form-group"><select id="rota-monitor" class="form-select" required><option value="" disabled selected></option></select><label for="rota-monitor" class="form-label">Monitor Responsável</label></div>
+              <div class="form-group full-width">
+                <span class="checkbox-group-label">Dias de Operação da Rota (Selecione ao menos um)</span>
+                <div class="checkbox-group">
+                  <div class="checkbox-item"><input type="checkbox" id="dia-seg" name="diasSemana" value="Segunda"><label for="dia-seg">Seg</label></div>
+                  <div class="checkbox-item"><input type="checkbox" id="dia-ter" name="diasSemana" value="Terca"><label for="dia-ter">Ter</label></div>
+                  <div class="checkbox-item"><input type="checkbox" id="dia-qua" name="diasSemana" value="Quarta"><label for="dia-qua">Qua</label></div>
+                  <div class="checkbox-item"><input type="checkbox" id="dia-qui" name="diasSemana" value="Quinta"><label for="dia-qui">Qui</label></div>
+                  <div class="checkbox-item"><input type="checkbox" id="dia-sex" name="diasSemana" value="Sexta"><label for="dia-sex">Sex</label></div>
+                  <div class="checkbox-item"><input type="checkbox" id="dia-sab" name="diasSemana" value="Sabado"><label for="dia-sab">Sáb</label></div>
+                  <div class="checkbox-item"><input type="checkbox" id="dia-dom" name="diasSemana" value="Domingo"><label for="dia-dom">Dom</label></div>
+                </div>
+              </div>
+              <div class="form-group full-width"><button type="submit" class="btn btn-primary">Adicionar Rota</button></div>
+            </form>
+            <hr style="border: none; border-top: 1px solid var(--md-divider-color); margin: 32px 0;">
+            <h3>Excluir Rota Existente</h3>
+            <div id="lista-rotas-gerenciar" class="management-list"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Elementos de Status e Carregamento -->
+      <div id="loading-spinner" class="spinner"></div>
+      <div id="status-message" class="status-message"></div>
+      
+    </div>
+
+    <!-- Inclui o JavaScript que controla a interatividade -->
+    <?!= include('JavaScript-Index');?>
+  </body>
+</html>

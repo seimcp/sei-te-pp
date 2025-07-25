@@ -1,0 +1,341 @@
+<!-- Arquivo: CSS.html (Versão 6.0 - Estilo Centralizado com Material Design) -->
+<style>
+  /* ------------------------- */
+  /*   1. VARIÁVEIS E GLOBAIS  */
+  /* ------------------------- */
+  :root {
+    --md-primary-color: #1976d2; /* Azul Material */
+    --md-primary-dark: #004ba0;
+    --md-primary-light: #63a4ff;
+    --md-secondary-color: #f5f5f5; /* Cinza claro */
+    --md-text-primary: #212121;
+    --md-text-secondary: #757575;
+    --md-divider-color: #e0e0e0;
+    --md-success-color: #2e7d32;
+    --md-error-color: #d32f2f;
+    --md-success-bg: #e8f5e9;
+    --md-error-bg: #ffebee;
+    --md-info-bg: #e3f2fd;
+    --md-border-radius: 4px;
+    --md-shadow-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    --md-shadow-2: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background-color: var(--md-secondary-color);
+    color: var(--md-text-primary);
+    margin: 0;
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3 {
+    margin-top: 0;
+    font-weight: 500;
+  }
+
+  /* ------------------------- */
+  /*   2. LAYOUT PRINCIPAL     */
+  /* ------------------------- */
+  .main-container {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    gap: 24px;
+  }
+
+  .card {
+    background-color: white;
+    border-radius: var(--md-border-radius);
+    box-shadow: var(--md-shadow-1);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--md-divider-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .header-title h1 {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+  }
+  
+  .header-title p {
+    font-size: 0.9rem;
+    color: var(--md-text-secondary);
+    margin: 0;
+  }
+
+  .card-content {
+    padding: 24px;
+  }
+
+  /* ------------------------- */
+  /*   3. ABAS (TABS)          */
+  /* ------------------------- */
+  .tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--md-divider-color);
+    background-color: #fafafa;
+  }
+
+  .tab-button {
+    padding: 14px 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--md-text-secondary);
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .tab-button:hover {
+    color: var(--md-text-primary);
+  }
+
+  .tab-button.active {
+    color: var(--md-primary-color);
+    border-bottom-color: var(--md-primary-color);
+  }
+
+  .tab-panel {
+    display: none;
+  }
+
+  .tab-panel.active {
+    display: block;
+    animation: fadeIn 0.5s;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* ------------------------- */
+  /*   4. FORMULÁRIOS          */
+  /* ------------------------- */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .form-group {
+    position: relative;
+  }
+  
+  .form-group.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    padding: 16px 12px 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: var(--md-border-radius);
+    font-size: 16px;
+    background-color: #f9f9f9;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--md-primary-color);
+    box-shadow: 0 0 0 2px var(--md-primary-light-alpha, rgba(25, 118, 210, 0.2));
+    background-color: white;
+  }
+
+  .form-label {
+    position: absolute;
+    top: 14px;
+    left: 12px;
+    font-size: 16px;
+    color: var(--md-text-secondary);
+    pointer-events: none;
+    transition: all 0.2s ease;
+  }
+
+  .form-input:focus + .form-label,
+  .form-input:not(:placeholder-shown) + .form-label,
+  .form-select:valid + .form-label,
+  .form-textarea:focus + .form-label,
+  .form-textarea:not(:placeholder-shown) + .form-label {
+    top: 4px;
+    left: 12px;
+    font-size: 12px;
+    color: var(--md-primary-color);
+  }
+  
+  .form-select:required:invalid {
+    color: var(--md-text-secondary);
+  }
+
+  /* ------------------------- */
+  /*   5. COMPONENTES          */
+  /* ------------------------- */
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--md-border-radius);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background-color 0.2s, box-shadow 0.2s;
+  }
+
+  .btn-primary {
+    background-color: var(--md-primary-color);
+    color: white;
+  }
+  .btn-primary:hover {
+    background-color: var(--md-primary-dark);
+    box-shadow: var(--md-shadow-1);
+  }
+
+  #refresh-data-btn {
+    background-color: var(--md-secondary-color);
+    color: var(--md-text-primary);
+    text-transform: none;
+    font-weight: 400;
+  }
+  #refresh-data-btn:hover {
+    background-color: #e0e0e0;
+  }
+
+  .aluno-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--md-divider-color);
+    border-radius: var(--md-border-radius);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .aluno-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .management-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 12px;
+  }
+
+  .management-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid var(--md-divider-color);
+    border-radius: var(--md-border-radius);
+  }
+  
+  .management-item-info strong {
+    display: block;
+  }
+  
+  .management-item-info small {
+    color: var(--md-text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .btn-danger {
+    background-color: var(--md-error-bg);
+    color: var(--md-error-color);
+    border: 1px solid var(--md-error-color);
+    padding: 6px 12px;
+    text-transform: none;
+  }
+  .btn-danger:hover {
+    background-color: var(--md-error-color);
+    color: white;
+  }
+
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 12px;
+    border: 1px solid var(--md-divider-color);
+    border-radius: var(--md-border-radius);
+  }
+  
+  .checkbox-group-label {
+    display: block;
+    font-size: 12px;
+    color: var(--md-text-secondary);
+    margin-bottom: 8px;
+  }
+  
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ------------------------- */
+  /*   6. ESTADOS E UTILITÁRIOS*/
+  /* ------------------------- */
+  .spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--md-secondary-color);
+    border-top-color: var(--md-primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 1000;
+    display: none; /* Controlado por JS */
+  }
+
+  @keyframes spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  .status-message {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: var(--md-border-radius);
+    color: white;
+    font-weight: 500;
+    box-shadow: var(--md-shadow-2);
+    z-index: 1001;
+    display: none; /* Controlado por JS */
+    animation: slideUp 0.5s ease-out;
+  }
+  
+  .status-message.success { background-color: var(--md-success-color); }
+  .status-message.error { background-color: var(--md-error-color); }
+  .status-message.info { background-color: var(--md-primary-color); }
+
+  @keyframes slideUp {
+    from { bottom: -100px; opacity: 0; }
+    to { bottom: 20px; opacity: 1; }
+  }
+</style>
